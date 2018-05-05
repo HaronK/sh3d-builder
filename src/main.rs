@@ -1,20 +1,40 @@
 extern crate clap;
+#[macro_use]
+extern crate serde_derive;
+extern crate failure;
+extern crate serde;
+extern crate serde_json;
+#[macro_use]
+extern crate failure_derive;
 
 use clap::{App, Arg};
+use failure::ResultExt;
 use std::fs::File;
 use std::io::{self, Read};
 
+mod builder;
+mod error;
+mod model;
+
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-fn get_home_config(file_match: Option<&str>) -> io::Result<String> {
+fn get_home_config(file_match: Option<&str>) -> Result<String, failure::Error> {
     let mut home_config = String::new();
 
     match file_match {
-        Some(filename) => File::open(filename)?.read_to_string(&mut home_config)?,
+        Some(filename) => File::open(filename)
+            .context(format!("Cannot open file {}", filename))?
+            .read_to_string(&mut home_config)
+            .context(format!("Cannot read file {}", filename))?,
         None => io::stdin().read_to_string(&mut home_config)?,
     };
 
     Ok(home_config)
+}
+
+fn build_home(home_config: String) -> Result<String, failure::Error> {
+    let home: model::Home = serde_json::from_str(&home_config).context("Cannot parse JSON data")?;
+    builder::build(home)
 }
 
 fn main() {
@@ -38,7 +58,10 @@ fn main() {
         println!("{}", VERSION);
     } else {
         match get_home_config(matches.value_of("FILE")) {
-            Ok(home_config) => println!("OK {}", home_config),
+            Ok(home_config) => match build_home(home_config) {
+                Ok(home) => println!("OK {}", home),
+                Err(err) => eprintln!("ERR {}", err),
+            },
             Err(err) => eprintln!("ERR {}", err),
         };
     }
