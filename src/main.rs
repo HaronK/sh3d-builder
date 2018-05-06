@@ -34,18 +34,30 @@ fn get_home_config(file_match: Option<&str>) -> Result<String, failure::Error> {
     Ok(home_config)
 }
 
-fn build_home(home_config: String) -> Result<String, failure::Error> {
+fn build_home(home_config: String, format: bool) -> Result<String, failure::Error> {
     let home: input_desc::Home =
         serde_json::from_str(&home_config).context("Cannot parse JSON data")?;
-    Ok(serde_json::to_string(&builder::build(home)?)?)
+
+    let new_home = builder::build(home)?;
+    let result = if format {
+        serde_json::to_string_pretty(&new_home)?
+    } else {
+        serde_json::to_string(&new_home)?
+    };
+
+    Ok(result)
 }
 
-fn run(show_version: bool, file_match: Option<&str>) -> Result<String, failure::Error> {
+fn run(
+    show_version: bool,
+    file_match: Option<&str>,
+    format: bool,
+) -> Result<String, failure::Error> {
     if show_version {
         Ok(VERSION.to_owned())
     } else {
         let home_config = get_home_config(file_match)?;
-        build_home(home_config)
+        build_home(home_config, format)
     }
 }
 
@@ -60,6 +72,11 @@ fn main() {
                 .short("v"),
         )
         .arg(
+            Arg::with_name("format")
+                .help("Format the output")
+                .short("f"),
+        )
+        .arg(
             Arg::with_name("FILE")
                 .help("Sets the input file to use")
                 .index(1),
@@ -69,6 +86,7 @@ fn main() {
     match run(
         matches.is_present("version-number"),
         matches.value_of("FILE"),
+        matches.is_present("format"),
     ) {
         Ok(home) => println!("OK {}", home),
         Err(err) => err.causes().for_each(|cause| eprintln!("ERR {}", cause)),
