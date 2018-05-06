@@ -1,0 +1,30 @@
+{
+    "rooms": [
+        {
+            "name": "Room",
+            "orientation": "CW",
+            "walls": [
+                {
+                    "direction": "Right",
+                    "length": 10,
+                    "thickness": 8
+                },
+                {
+                    "direction": "Down",
+                    "length": 5,
+                    "thickness": 6
+                },
+                {
+                    "direction": "Left",
+                    "length": 10,
+                    "thickness": 4
+                },
+                {
+                    "direction": "Up",
+                    "length": 5,
+                    "thickness": 2
+                }
+            ]
+        }
+    ]
+}

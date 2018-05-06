@@ -1,18 +1,27 @@
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Home {
-    rooms: Vec<Room>,
+    pub rooms: Vec<Room>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Room {
-    name: String,
-    walls: Vec<Wall>,
+    pub name: String,
+    pub orientation: WallOrientation,
+    pub walls: Vec<Wall>,
+}
+
+/// Specify in what order room's walls are described relatively to the room's center.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Copy, Clone)]
+pub enum WallOrientation {
+    CCW,
+    CW,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Wall {
-    wall_type: WallType,
-    direction: Direction,
+    pub direction: Direction,
+    pub length: f32,
+    pub thickness: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -21,11 +30,10 @@ pub enum WallType {
     Circle { radius: f32 },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Copy, Clone)]
 pub enum Direction {
     Left,
     Right,
-    Top,
-    Bottom,
-    Undefined,
+    Up,
+    Down,
 }

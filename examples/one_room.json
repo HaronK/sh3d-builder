@@ -2,7 +2,39 @@
     "rooms": [
         {
             "name": "Bedroom1",
-            "walls": []
+            "orientation": "CW",
+            "walls": [
+                {
+                    "direction": "Right",
+                    "length": 698,
+                    "thickness": 25
+                },
+                {
+                    "direction": "Down",
+                    "length": 713,
+                    "thickness": 45
+                },
+                {
+                    "direction": "Left",
+                    "length": 398,
+                    "thickness": 8
+                },
+                {
+                    "direction": "Up",
+                    "length": 160,
+                    "thickness": 7
+                },
+                {
+                    "direction": "Left",
+                    "length": 300,
+                    "thickness": 8
+                },
+                {
+                    "direction": "Up",
+                    "length": 553,
+                    "thickness": 7.5
+                }
+            ]
         }
     ]
 }
