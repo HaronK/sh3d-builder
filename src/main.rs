@@ -13,8 +13,8 @@ use std::fs::File;
 use std::io::{self, Read};
 
 mod builder;
-mod error;
-mod model;
+mod input_desc;
+mod output_desc;
 
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
@@ -33,8 +33,9 @@ fn get_home_config(file_match: Option<&str>) -> Result<String, failure::Error> {
 }
 
 fn build_home(home_config: String) -> Result<String, failure::Error> {
-    let home: model::Home = serde_json::from_str(&home_config).context("Cannot parse JSON data")?;
-    builder::build(home)
+    let home: input_desc::Home =
+        serde_json::from_str(&home_config).context("Cannot parse JSON data")?;
+    Ok(serde_json::to_string(&builder::build(home)?)?)
 }
 
 fn main() {
