@@ -35,6 +35,45 @@
                     "thickness": 7.5
                 }
             ]
+        },
+        {
+            "name": "Bedroom1",
+            "orientation": "CW",
+            "walls": [
+                {
+                    "direction": "Right",
+                    "length": 398,
+                    "thickness": 8
+                },
+                {
+                    "direction": "Down",
+                    "length": 460,
+                    "thickness": 45
+                },
+                {
+                    "direction": "Left",
+                    "length": 398,
+                    "thickness": 25
+                },
+                {
+                    "direction": "Up",
+                    "length": 460,
+                    "thickness": 7
+                }
+            ]
+        }
+    ],
+    "connections": [
+        {
+            "room1": {
+                "name": "LivingRoom",
+                "wall_index": 3
+            },
+            "room2": {
+                "name": "Bedroom1",
+                "wall_index": 1
+            },
+            "conn_type": "Coincide"
         }
     ]
 }

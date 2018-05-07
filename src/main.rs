@@ -13,12 +13,15 @@ use std::fs::File;
 use std::io::{self, Read};
 
 mod builder;
+mod error;
 mod input_desc;
 mod output_desc;
 
+use error::Result;
+
 const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 
-fn get_home_config(file_match: Option<&str>) -> Result<String, failure::Error> {
+fn get_home_config(file_match: Option<&str>) -> Result<String> {
     let mut home_config = String::new();
 
     match file_match {
@@ -34,7 +37,7 @@ fn get_home_config(file_match: Option<&str>) -> Result<String, failure::Error> {
     Ok(home_config)
 }
 
-fn build_home(home_config: String, format: bool) -> Result<String, failure::Error> {
+fn build_home(home_config: String, format: bool) -> Result<String> {
     let home: input_desc::Home =
         serde_json::from_str(&home_config).context("Cannot parse JSON data")?;
 
@@ -48,11 +51,7 @@ fn build_home(home_config: String, format: bool) -> Result<String, failure::Erro
     Ok(result)
 }
 
-fn run(
-    show_version: bool,
-    file_match: Option<&str>,
-    format: bool,
-) -> Result<String, failure::Error> {
+fn run(show_version: bool, file_match: Option<&str>, format: bool) -> Result<String> {
     if show_version {
         Ok(VERSION.to_owned())
     } else {
@@ -83,11 +82,13 @@ fn main() {
         )
         .get_matches();
 
-    match run(
+    let result = run(
         matches.is_present("version-number"),
         matches.value_of("FILE"),
         matches.is_present("format"),
-    ) {
+    );
+
+    match result {
         Ok(home) => println!("OK {}", home),
         Err(err) => err.causes().for_each(|cause| eprintln!("ERR {}", cause)),
     }
