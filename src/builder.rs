@@ -292,7 +292,7 @@ fn connect_rooms(
 
     // shift rooms
     output_home.rooms.iter_mut().for_each(|room| {
-        let (_, off_x, off_y) = connected_rooms.iter().find(|r| r.0 == room.name).unwrap();
+        let &(_, off_x, off_y) = connected_rooms.iter().find(|r| r.0 == room.name).unwrap();
 
         room.walls.iter_mut().for_each(|wall| {
             wall.start.x += off_x;
