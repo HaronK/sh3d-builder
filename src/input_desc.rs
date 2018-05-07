@@ -1,5 +1,6 @@
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Home {
+    pub orientation: WallOrientation,
     pub rooms: Vec<Room>,
     #[serde(default)]
     pub connections: Vec<RoomConnection>,
@@ -8,7 +9,6 @@ pub struct Home {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Room {
     pub name: String,
-    pub orientation: WallOrientation,
     pub walls: Vec<Wall>,
 }
 

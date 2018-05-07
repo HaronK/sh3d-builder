@@ -1,8 +1,8 @@
 {
+    "orientation": "CW",
     "rooms": [
         {
             "name": "Room",
-            "orientation": "CW",
             "walls": [
                 {
                     "direction": "Right",

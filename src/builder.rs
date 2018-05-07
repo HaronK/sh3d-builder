@@ -30,6 +30,16 @@ pub enum BuildError {
     DifferentThickness(String, usize, String, usize),
     #[fail(display = "Rooms {:?} are not connected to other", _0)]
     RoomsNotConnected(Vec<String>),
+    #[fail(
+        display = "Room '{}' wall {} start {:?} doesn't coincide with room '{}' wall {} end {:?}",
+        _0,
+        _1,
+        _2,
+        _3,
+        _4,
+        _5
+    )]
+    WallsStartEndNotCoincide(String, usize, Point, String, usize, Point),
 }
 
 pub fn build(input_home: input_desc::Home) -> Result<output_desc::Home> {
@@ -47,7 +57,10 @@ pub fn build(input_home: input_desc::Home) -> Result<output_desc::Home> {
 }
 
 fn build_output_rooms(input_home: &input_desc::Home) -> Result<output_desc::Home> {
-    let mut output_home = output_desc::Home { rooms: vec![] };
+    let mut output_home = output_desc::Home {
+        orientation: input_home.orientation,
+        rooms: vec![],
+    };
 
     let input_rooms = &input_home.rooms;
     for input_room in input_rooms {
@@ -59,7 +72,6 @@ fn build_output_rooms(input_home: &input_desc::Home) -> Result<output_desc::Home
         let mut output_room = output_desc::Room {
             name: input_room.name.clone(),
             walls: vec![],
-            orientation: input_room.orientation,
         };
 
         let origin = Point { x: 0.0, y: 0.0 };
@@ -70,7 +82,7 @@ fn build_output_rooms(input_home: &input_desc::Home) -> Result<output_desc::Home
             let next_wall = &input_room.walls[(i + 1) % walls_count];
 
             let start_point =
-                calc_wall_point(&cur_point, prev_wall, cur_wall, input_room.orientation).context(
+                calc_wall_point(&cur_point, prev_wall, cur_wall, input_home.orientation).context(
                     format!(
                         "Room {:?}, wall {} and previous one. Error: ",
                         input_room.name, i
@@ -85,7 +97,7 @@ fn build_output_rooms(input_home: &input_desc::Home) -> Result<output_desc::Home
             }
 
             let end_point =
-                calc_wall_point(&cur_point, cur_wall, next_wall, input_room.orientation).context(
+                calc_wall_point(&cur_point, cur_wall, next_wall, input_home.orientation).context(
                     format!(
                         "Room {:?}, wall {} and next one. Error: ",
                         input_room.name, i
@@ -236,11 +248,7 @@ fn connect_rooms(
             let wall1 = get_wall_by_index(connected_room, connected_room_info.wall_index)?;
             let wall2 = get_wall_by_index(unconnected_room, unconnected_room_info.wall_index)?;
 
-            if !check_walls_can_connect(
-                wall1,
-                wall2,
-                connected_room.orientation == unconnected_room.orientation,
-            ) {
+            if !check_walls_can_connect(wall1, wall2) {
                 return Err(BuildError::WallsCannotConnect(
                     connected_room.name.clone(),
                     connected_room_info.wall_index,
@@ -294,22 +302,14 @@ fn connect_rooms(
         });
     });
 
-    Ok(())
+    verify_room_connections(output_home, connections)
 }
 
-fn check_walls_can_connect(
-    wall1: &output_desc::Wall,
-    wall2: &output_desc::Wall,
-    same_orientation: bool,
-) -> bool {
-    if same_orientation {
-        (wall1.direction == Direction::Left && wall2.direction == Direction::Right)
-            || (wall1.direction == Direction::Right && wall2.direction == Direction::Left)
-            || (wall1.direction == Direction::Up && wall2.direction == Direction::Down)
-            || (wall1.direction == Direction::Down && wall2.direction == Direction::Up)
-    } else {
-        wall1.direction == wall2.direction
-    }
+fn check_walls_can_connect(wall1: &output_desc::Wall, wall2: &output_desc::Wall) -> bool {
+    (wall1.direction == Direction::Left && wall2.direction == Direction::Right)
+        || (wall1.direction == Direction::Right && wall2.direction == Direction::Left)
+        || (wall1.direction == Direction::Up && wall2.direction == Direction::Down)
+        || (wall1.direction == Direction::Down && wall2.direction == Direction::Up)
 }
 
 fn get_wall_by_index(room: &output_desc::Room, index: usize) -> Result<&output_desc::Wall> {
@@ -318,4 +318,73 @@ fn get_wall_by_index(room: &output_desc::Room, index: usize) -> Result<&output_d
     }
 
     Ok(&room.walls[index - 1])
+}
+
+fn verify_room_connections(
+    output_home: &output_desc::Home,
+    connections: &Vec<RoomConnection>,
+) -> Result<()> {
+    for conn in connections {
+        let room1 = &output_home
+            .rooms
+            .iter()
+            .find(|room| room.name == conn.room1.name)
+            .ok_or_else(|| BuildError::NoRoom(conn.room1.name.clone()))?;
+        let wall1 = get_wall_by_index(room1, conn.room1.wall_index)?;
+        let room2 = &output_home
+            .rooms
+            .iter()
+            .find(|room| room.name == conn.room2.name)
+            .ok_or_else(|| BuildError::NoRoom(conn.room2.name.clone()))?;
+        let wall2 = get_wall_by_index(room2, conn.room2.wall_index)?;
+
+        if conn.conn_type == ConnectionType::Coincide
+            || conn.conn_type == ConnectionType::StartToEnd
+        {
+            if wall1.start != wall2.end {
+                return Err(BuildError::WallsStartEndNotCoincide(
+                    room1.name.clone(),
+                    conn.room1.wall_index,
+                    wall1.start.clone(),
+                    room2.name.clone(),
+                    conn.room2.wall_index,
+                    wall2.end.clone(),
+                ).into());
+            }
+        }
+        if conn.conn_type == ConnectionType::Coincide
+            || conn.conn_type == ConnectionType::EndToStart
+        {
+            if wall2.start != wall1.end {
+                return Err(BuildError::WallsStartEndNotCoincide(
+                    room2.name.clone(),
+                    conn.room2.wall_index,
+                    wall2.start.clone(),
+                    room1.name.clone(),
+                    conn.room1.wall_index,
+                    wall1.end.clone(),
+                ).into());
+            }
+        }
+
+        if !check_walls_can_connect(wall1, wall2) {
+            return Err(BuildError::WallsCannotConnect(
+                room1.name.clone(),
+                conn.room1.wall_index,
+                room2.name.clone(),
+                conn.room2.wall_index,
+            ).into());
+        }
+
+        if wall1.thickness != wall2.thickness {
+            return Err(BuildError::DifferentThickness(
+                room1.name.clone(),
+                conn.room1.wall_index,
+                room2.name.clone(),
+                conn.room2.wall_index,
+            ).into());
+        }
+    }
+
+    Ok(())
 }
