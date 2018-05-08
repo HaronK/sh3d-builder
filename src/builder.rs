@@ -215,14 +215,17 @@ fn connect_rooms(
     while connected_index < connected_rooms.len() {
         let (room1_name, conn_off_x, conn_off_y) = connected_rooms[connected_index].clone();
 
-        let active_connections: Vec<_> = connections
-            .iter()
-            .filter(|conn| {
-                (conn.room1.name == *room1_name && unconnected_rooms.contains(&conn.room2.name))
-                    || (conn.room2.name == *room1_name
-                        && unconnected_rooms.contains(&conn.room1.name))
-            })
-            .collect();
+        let mut active_connections = vec![];
+        for conn in connections {
+            if conn.room1.name == *room1_name && unconnected_rooms.contains(&conn.room2.name) {
+                active_connections.push(conn);
+                unconnected_rooms.retain(|ref r| **r != conn.room2.name);
+            }
+            if conn.room2.name == *room1_name && unconnected_rooms.contains(&conn.room1.name) {
+                active_connections.push(conn);
+                unconnected_rooms.retain(|ref r| **r != conn.room1.name);
+            }
+        }
 
         for conn in active_connections {
             let mut connected_room_info = &conn.room1;
@@ -280,7 +283,6 @@ fn connect_rooms(
                 off_x + conn_off_x,
                 off_y + conn_off_y,
             ));
-            unconnected_rooms.retain(|ref r| **r != unconnected_room_info.name);
         }
 
         connected_index += 1;
