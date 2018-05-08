@@ -42,8 +42,8 @@ pub enum BuildError {
     WallsStartEndNotCoincide(String, usize, Point, String, usize, Point),
 }
 
-pub fn build(input_home: input_desc::Home) -> Result<output_desc::Home> {
-    if input_home.rooms.len() > 1 && input_home.connections.len() == 0 {
+pub fn build(input_home: &input_desc::Home) -> Result<output_desc::Home> {
+    if input_home.rooms.len() > 1 && input_home.connections.is_empty() {
         return Err(BuildError::NoRoomConnections.into());
     }
 
@@ -205,7 +205,7 @@ fn calc_wall_point(
 
 fn connect_rooms(
     output_home: &mut output_desc::Home,
-    connections: &Vec<RoomConnection>,
+    connections: &[RoomConnection],
 ) -> Result<()> {
     let mut unconnected_rooms: Vec<_> = output_home.rooms.iter().map(|r| r.name.clone()).collect();
     let mut connected_rooms = vec![(unconnected_rooms.remove(0), 0.0, 0.0)];
@@ -228,13 +228,11 @@ fn connect_rooms(
         }
 
         for conn in active_connections {
-            let mut connected_room_info = &conn.room1;
-            let mut unconnected_room_info = &conn.room2;
-
-            if conn.room2.name == *room1_name {
-                connected_room_info = &conn.room2;
-                unconnected_room_info = &conn.room1;
-            }
+            let (connected_room_info, unconnected_room_info) = if conn.room1.name == *room1_name {
+                (&conn.room1, &conn.room2)
+            } else {
+                (&conn.room2, &conn.room1)
+            };
 
             let connected_room = output_home
                 .rooms
@@ -324,7 +322,7 @@ fn get_wall_by_index(room: &output_desc::Room, index: usize) -> Result<&output_d
 
 fn verify_room_connections(
     output_home: &output_desc::Home,
-    connections: &Vec<RoomConnection>,
+    connections: &[RoomConnection],
 ) -> Result<()> {
     for conn in connections {
         let room1 = &output_home
@@ -340,33 +338,29 @@ fn verify_room_connections(
             .ok_or_else(|| BuildError::NoRoom(conn.room2.name.clone()))?;
         let wall2 = get_wall_by_index(room2, conn.room2.wall_index)?;
 
-        if conn.conn_type == ConnectionType::Coincide
-            || conn.conn_type == ConnectionType::StartToEnd
+        if (conn.conn_type == ConnectionType::Coincide
+            || conn.conn_type == ConnectionType::StartToEnd) && wall1.start != wall2.end
         {
-            if wall1.start != wall2.end {
-                return Err(BuildError::WallsStartEndNotCoincide(
-                    room1.name.clone(),
-                    conn.room1.wall_index,
-                    wall1.start.clone(),
-                    room2.name.clone(),
-                    conn.room2.wall_index,
-                    wall2.end.clone(),
-                ).into());
-            }
+            return Err(BuildError::WallsStartEndNotCoincide(
+                room1.name.clone(),
+                conn.room1.wall_index,
+                wall1.start.clone(),
+                room2.name.clone(),
+                conn.room2.wall_index,
+                wall2.end.clone(),
+            ).into());
         }
-        if conn.conn_type == ConnectionType::Coincide
-            || conn.conn_type == ConnectionType::EndToStart
+        if (conn.conn_type == ConnectionType::Coincide
+            || conn.conn_type == ConnectionType::EndToStart) && wall2.start != wall1.end
         {
-            if wall2.start != wall1.end {
-                return Err(BuildError::WallsStartEndNotCoincide(
-                    room2.name.clone(),
-                    conn.room2.wall_index,
-                    wall2.start.clone(),
-                    room1.name.clone(),
-                    conn.room1.wall_index,
-                    wall1.end.clone(),
-                ).into());
-            }
+            return Err(BuildError::WallsStartEndNotCoincide(
+                room2.name.clone(),
+                conn.room2.wall_index,
+                wall2.start.clone(),
+                room1.name.clone(),
+                conn.room1.wall_index,
+                wall1.end.clone(),
+            ).into());
         }
 
         if !check_walls_can_connect(wall1, wall2) {

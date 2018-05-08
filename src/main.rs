@@ -19,7 +19,7 @@ mod output_desc;
 
 use error::Result;
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn get_home_config(file_match: Option<&str>) -> Result<String> {
     let mut home_config = String::new();
@@ -37,11 +37,11 @@ fn get_home_config(file_match: Option<&str>) -> Result<String> {
     Ok(home_config)
 }
 
-fn build_home(home_config: String, format: bool) -> Result<String> {
+fn build_home(home_config: &str, format: bool) -> Result<String> {
     let home: input_desc::Home =
         serde_json::from_str(&home_config).context("Cannot parse JSON data")?;
 
-    let new_home = builder::build(home)?;
+    let new_home = builder::build(&home)?;
     let result = if format {
         serde_json::to_string_pretty(&new_home)?
     } else {
@@ -56,7 +56,7 @@ fn run(show_version: bool, file_match: Option<&str>, format: bool) -> Result<Str
         Ok(VERSION.to_owned())
     } else {
         let home_config = get_home_config(file_match)?;
-        build_home(home_config, format)
+        build_home(&home_config, format)
     }
 }
 
