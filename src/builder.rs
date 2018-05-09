@@ -1,3 +1,4 @@
+use std::f32;
 use error::Result;
 use failure::ResultExt;
 use input_desc::{self, ConnectionType, Direction, RoomConnection};
@@ -258,7 +259,7 @@ fn connect_rooms(
                 ).into());
             }
 
-            if wall1.thickness != wall2.thickness {
+            if (wall1.thickness - wall2.thickness).abs() > f32::EPSILON {
                 return Err(BuildError::DifferentThickness(
                     connected_room.name.clone(),
                     connected_room_info.wall_index,
@@ -372,7 +373,7 @@ fn verify_room_connections(
             ).into());
         }
 
-        if wall1.thickness != wall2.thickness {
+        if (wall1.thickness - wall2.thickness).abs() > f32::EPSILON {
             return Err(BuildError::DifferentThickness(
                 room1.name.clone(),
                 conn.room1.wall_index,
