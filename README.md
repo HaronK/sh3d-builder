@@ -17,9 +17,11 @@ Features:
 
 Install [rustup](https://rustup.rs/).
 
-Compile project:
+Clone and compile project:
 
 ```bash
+git clone https://github.com/HaronK/sh3d-builder.git
+cd ./sh3d-builder
 cargo build --release
 ```
 
