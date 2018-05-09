@@ -64,10 +64,10 @@ fn main() {
     let matches = App::new("Sweet Home 3D model builder")
         .version(VERSION)
         .author("Khryptul Oleg <okreptul@yahoo.com>")
-        .about("Generating data for Sweet Home 3D from the human readable description")
+        .about("Generating data for building Sweet Home 3D rooms from the human readable description.")
         .arg(
             Arg::with_name("version-number")
-                .help("Get version number")
+                .help(&format!("Prints version number: {}", VERSION))
                 .short("v"),
         )
         .arg(
